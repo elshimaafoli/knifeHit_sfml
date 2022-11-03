@@ -8,24 +8,28 @@ int main()
 
     RenderWindow window(sf::VideoMode(500, 800), "Knife Hit");
     //window.setFramerateLimit(30);
-    RectangleShape knifeSpRec[3];
+
+    //Defining our variables
+    RectangleShape knife(Vector2f(100,100)), bgGroundImg(Vector2f(500,800)),knifeSpRec[3];
+    CircleShape appleSp, appleScore, target(100.f);
+    Texture bgGround, targetTex, knifeTe, appleTex,knifeSpTex;
 
     float angle=0.05;
     int shootSpeed=-1,knives_num=3, speedLevel=1;
-    int cx,cy, spY=-70;
-    bool shoot=0, applecheck=0,inside=1,newGame=0;
+    int cx,cy, win_x,win_y,spY=-70;
+    bool shoot=0, applecheck=0,inside=1, over = 0;
+
+    win_x = window.getSize().x;
+    win_y = window.getSize().y;
 
     Font font;
     if(!font.loadFromFile("font/arial.ttf"))return -1;
 
-    SoundBuffer bkBuffer,shootBuffer,vanishBuffer;
-    Sound bkSound, shootSound,vanishSound;
-    if(!bkBuffer.loadFromFile("sounds/bg.wav")) return -1;
-
-    bkSound.setBuffer(bkBuffer);
-    bkSound.play();
-    bkSound.setLoop(true);
-    bkSound.setVolume(30);
+    //Initializing and loading sounds
+    SoundBuffer bgBuffer,shootBuffer,vanishBuffer;
+    Sound bgSound, shootSound,vanishSound;
+    if(!bgBuffer.loadFromFile("sounds/bg.wav")) return -1;
+    bgSound.setBuffer(bgBuffer);
 
     if(!vanishBuffer.loadFromFile("sounds/cut-audio.wav"))return -1;
     vanishSound.setBuffer(vanishBuffer);
@@ -33,23 +37,34 @@ int main()
     if(!shootBuffer.loadFromFile("sounds/shoot.wav"))return -1;
     shootSound.setBuffer(shootBuffer);
 
-    Texture bkground, targetTex, knifeTe, apple,knifeSpTex;
+    // Playing sound in the background
+    bgSound.play();
+    bgSound.setLoop(true);
+    bgSound.setVolume(30);
+
+    //Loading and configuring images
+    if(!knifeTe.loadFromFile("images/knife.png")) return -1;
+    knife.setTexture(&knifeTe);
+    knife.setOrigin(knife.getGlobalBounds().width/2,knife.getGlobalBounds().height/2);
+    knife.setPosition(win_x/2,700);
+
+    if(!appleTex.loadFromFile("images/apple.png")) return -1;
+    appleSp.setTexture(&appleTex);
+    appleSp.setRadius(20);
+    appleSp.setOrigin(100,100);
+
+    if(!targetTex.loadFromFile("images/target.png"))return -1;
+    target.setTexture(&targetTex);
+    target.setOrigin(100,100);
+    target.setPosition(win_x/2,win_y/3);
 
     if(!knifeSpTex.loadFromFile("images/knife-spare.png"))return -1;
 
-    if(!bkground.loadFromFile("images/bkground.jpg"))return -1;
-    RectangleShape bkgroundimg(Vector2f(500,800));
-    bkgroundimg.setTexture(&bkground);
+    if(!bgGround.loadFromFile("images/background.jpg"))return -1;
+    bgGroundImg.setTexture(&bgGround);
 
-    Text gameover;
-    gameover.setFillColor(Color::Blue);
-    gameover.setString("GameOver");
-    gameover.setCharacterSize(40);
-    gameover.setOrigin(gameover.getGlobalBounds().width/2,gameover.getGlobalBounds().height/2);
-    gameover.setPosition(window.getSize().x/2,window.getSize().y/2);
-    gameover.setStyle(Text::Bold);
-    gameover.setFont(font);
 
+    //Setting text
     int scoreNum=0;
     Text textNum;
     textNum.setFillColor(Color::White);
@@ -73,42 +88,39 @@ int main()
     speedLevelTex.setPosition(470,0);
     speedLevelTex.setFont(font);
 
-    if(!apple.loadFromFile("images/apple.png")) return -1;
-    CircleShape appleSp;
-    appleSp.setTexture(&apple);
-    appleSp.setRadius(20);
-    appleSp.setOrigin(100,100);
+    Text gameover;
+    gameover.setFillColor(Color::White);
+    gameover.setString("Game Over");
+    gameover.setCharacterSize(40);
+    gameover.setPosition(win_x/2,win_y/2);
+    gameover.setOrigin(40*9 - win_x/2,gameover.getGlobalBounds().height/2);
+    gameover.setStyle(Text::Bold);
+    gameover.setFont(font);
 
-    CircleShape appleScore;
-    appleScore.setTexture(&apple);
+    Text overScore;
+    overScore.setFillColor(Color::White);
+    overScore.setCharacterSize(40);
+    overScore.setPosition(win_x/2, win_y/2);
+    overScore.setOrigin(0,overScore.getGlobalBounds().height/2 -50);
+    overScore.setStyle(Text::Bold);
+    overScore.setFont(font);
+
+    appleScore.setTexture(&appleTex);
     appleScore.setRadius(20);
     appleScore.setPosition(20,0);
 
-
-    RectangleShape knife(Vector2f(100,100));
-    if(!knifeTe.loadFromFile("images/knife-.png")) return -1;
-    knife.setOrigin(knife.getGlobalBounds().width/2,knife.getGlobalBounds().height/2);
-    knife.setPosition(window.getSize().x/2,700);
-    knife.setTexture(&knifeTe);
-
-    if(!targetTex.loadFromFile("images/target.png"))return -1;
-    CircleShape target(100.f);
-    target.setTexture(&targetTex);
-    target.setOrigin(100,100);
-    target.setPosition(window.getSize().x/2,window.getSize().y/3);
-
-
+    //Specifying the spare knives
     for(int i = 0; i<3; i++)
     {
         knifeSpRec[i].setSize(Vector2f(50.f,50.f));
         knifeSpRec[i].setTexture(&knifeSpTex);
-        knifeSpRec[i].setPosition(20,window.getSize().y+spY);
+        knifeSpRec[i].setPosition(20,win_y+spY);
         spY-=70;
     }
 
+    /*Game Loop*/
     while (window.isOpen())
     {
-
 
         Event event;
         while (window.pollEvent(event))
@@ -121,7 +133,6 @@ int main()
                 {
                     shoot=true;
                     inside=1;
-
                     shootSpeed=-1;
                     shootSound.play();
 
@@ -130,7 +141,10 @@ int main()
         }
 
         window.clear();
-        window.draw(bkgroundimg);
+
+        /*-Game Logic*/
+        window.draw(bgGroundImg);
+
         cx=target.getPosition().x;
         cy=target.getPosition().y;
         appleSp.setPosition(cx,cy);
@@ -143,7 +157,7 @@ int main()
             knife.move(0,shootSpeed);
 
 
-        if(shoot&&knife.getPosition().x<=(window.getSize().x/2)+100&&knife.getPosition().y<=(window.getSize().y/3)+100)
+        if(shoot&&knife.getPosition().x<=(win_x/2)+100&&knife.getPosition().y<=(win_y/3)+100)
         {
             // win .. striking the apple
             if(inside&&appleSp.getGlobalBounds().contains(knife.getPosition().x,knife.getPosition().y))
@@ -154,21 +168,23 @@ int main()
                 speedLevel++;
                 angle+=0.1;
                 shootSpeed=0;
-                knife.setPosition(window.getSize().x/2,700);
+                knife.setPosition(win_x/2,700);
                 //  shoot=0;
-                newGame=1;
-                vanishSound.play();
+
+                //vanishSound.play();
             }
             // lose
             else if(inside)
             {
+                over=0;
                 if(knives_num<=1)
                 {
                     knives_num--;
                     shootSpeed=0;
                     angle=0;
                     window.draw(gameover);
-                    bkSound.stop();
+                    over = 1;
+                    bgSound.stop();
                 }
                 //strike the wood
                 else
@@ -177,27 +193,34 @@ int main()
                     std::cout<<knives_num<<std::endl;
                     shoot=0;
                     applecheck=0;
-                    knife.setPosition(window.getSize().x/2,700);
+                    knife.setPosition(win_x/2,700);
                     shootSpeed=0;
                     //angle=0;
-
                 }
             }
+        }
 
-        }
-        window.draw(knife);
-        window.draw(target);
-        window.draw(speedText);
-        speedLevelTex.setString(std::to_string(speedLevel));
-        window.draw(speedLevelTex);
-        window.draw(appleScore);
-        textNum.setString(std::to_string(scoreNum));
-        window.draw(textNum);
-        for(int i=0; i<knives_num; i++)
+        if(!over)
         {
-            window.draw(knifeSpRec[i]);
+            window.draw(knife);
+            window.draw(target);
+            window.draw(speedText);
+            speedLevelTex.setString(std::to_string(speedLevel));
+            window.draw(speedLevelTex);
+            window.draw(appleScore);
+            textNum.setString(std::to_string(scoreNum));
+            window.draw(textNum);
+
+
+            for(int i=0; i<knives_num; i++)
+            {
+                window.draw(knifeSpRec[i]);
+            }
+            if(!applecheck)window.draw(appleSp);
+        }else{
+            overScore.setString(std::to_string(scoreNum));
+            window.draw(overScore);
         }
-        if(!applecheck)window.draw(appleSp);
         window.display();
     }
 
