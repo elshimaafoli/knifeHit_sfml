@@ -6,36 +6,34 @@ using namespace sf;
 int main()
 {
 
-    RenderWindow window(sf::VideoMode(500, 800), "SFML works!");
+    RenderWindow window(sf::VideoMode(500, 800), "Knife Hit");
+    //window.setFramerateLimit(30);
+    RectangleShape knifeSpRec[3];
 
     float angle=0.05;
-    int shootSpeed=-1,knives_num=3;
-    int cx,cy;
-    bool shoot=0;
-    bool applecheck=0,inside=1,newGame=0;
-    RectangleShape knifeSpRec[3];
-    int spY=-70;
-    int speedLevel=1;
+    int shootSpeed=-1,knives_num=3, speedLevel=1;
+    int cx,cy, spY=-70;
+    bool shoot=0, applecheck=0,inside=1,newGame=0;
 
     Font font;
     if(!font.loadFromFile("font/arial.ttf"))return -1;
 
-    Music bkMusic;
-    if(!bkMusic.openFromFile("sounds/bg.wav")) return -1;
-    bkMusic.play();
-    bkMusic.setLoop(true);
-    bkMusic.setVolume(30);
+    SoundBuffer bkBuffer,shootBuffer,vanishBuffer;
+    Sound bkSound, shootSound,vanishSound;
+    if(!bkBuffer.loadFromFile("sounds/bg.wav")) return -1;
 
-    SoundBuffer buffer;
-    if(!buffer.loadFromFile("sounds/shoot.wav"))return -1;
-    Sound shootSound;
-    shootSound.setBuffer(buffer);
+    bkSound.setBuffer(bkBuffer);
+    bkSound.play();
+    bkSound.setLoop(true);
+    bkSound.setVolume(30);
 
-    Texture bkground;
-    Texture targetTex;
-    Texture knifeTe;
-    Texture apple;
-    Texture knifeSpTex;
+    if(!vanishBuffer.loadFromFile("sounds/cut-audio.wav"))return -1;
+    vanishSound.setBuffer(vanishBuffer);
+
+    if(!shootBuffer.loadFromFile("sounds/shoot.wav"))return -1;
+    shootSound.setBuffer(shootBuffer);
+
+    Texture bkground, targetTex, knifeTe, apple,knifeSpTex;
 
     if(!knifeSpTex.loadFromFile("images/knife-spare.png"))return -1;
 
@@ -87,11 +85,11 @@ int main()
     appleScore.setPosition(20,0);
 
 
-    RectangleShape knifeSp(Vector2f(100,100));
+    RectangleShape knife(Vector2f(100,100));
     if(!knifeTe.loadFromFile("images/knife-.png")) return -1;
-    knifeSp.setOrigin(knifeSp.getGlobalBounds().width/2,knifeSp.getGlobalBounds().height/2);
-    knifeSp.setPosition(window.getSize().x/2,700);
-    knifeSp.setTexture(&knifeTe);
+    knife.setOrigin(knife.getGlobalBounds().width/2,knife.getGlobalBounds().height/2);
+    knife.setPosition(window.getSize().x/2,700);
+    knife.setTexture(&knifeTe);
 
     if(!targetTex.loadFromFile("images/target.png"))return -1;
     CircleShape target(100.f);
@@ -120,11 +118,14 @@ int main()
             if(event.type==Event::KeyPressed)
             {
                 if(event.key.code==Keyboard::Space)
+                {
                     shoot=true;
                     inside=1;
 
                     shootSpeed=-1;
-                shootSound.play();
+                    shootSound.play();
+
+                }
             }
         }
 
@@ -139,24 +140,24 @@ int main()
 
 
         if(shoot)
-                knifeSp.move(0,shootSpeed);
+            knife.move(0,shootSpeed);
 
 
-        if(shoot&&knifeSp.getPosition().x<=(window.getSize().x/2)+100&&knifeSp.getPosition().y<=(window.getSize().y/3)+100)
+        if(shoot&&knife.getPosition().x<=(window.getSize().x/2)+100&&knife.getPosition().y<=(window.getSize().y/3)+100)
         {
-            // win
-            if(inside&&appleSp.getGlobalBounds().contains(knifeSp.getPosition().x,knifeSp.getPosition().y))
+            // win .. striking the apple
+            if(inside&&appleSp.getGlobalBounds().contains(knife.getPosition().x,knife.getPosition().y))
             {
-
                 scoreNum++;
                 inside=0;
                 //applecheck=1;
                 speedLevel++;
                 angle+=0.1;
                 shootSpeed=0;
-                knifeSp.setPosition(window.getSize().x/2,700);
-              //  shoot=0;
+                knife.setPosition(window.getSize().x/2,700);
+                //  shoot=0;
                 newGame=1;
+                vanishSound.play();
             }
             // lose
             else if(inside)
@@ -167,7 +168,7 @@ int main()
                     shootSpeed=0;
                     angle=0;
                     window.draw(gameover);
-
+                    bkSound.stop();
                 }
                 //strike the wood
                 else
@@ -176,7 +177,7 @@ int main()
                     std::cout<<knives_num<<std::endl;
                     shoot=0;
                     applecheck=0;
-                    knifeSp.setPosition(window.getSize().x/2,700);
+                    knife.setPosition(window.getSize().x/2,700);
                     shootSpeed=0;
                     //angle=0;
 
@@ -184,7 +185,7 @@ int main()
             }
 
         }
-        window.draw(knifeSp);
+        window.draw(knife);
         window.draw(target);
         window.draw(speedText);
         speedLevelTex.setString(std::to_string(speedLevel));
